@@ -315,26 +315,21 @@ struct FastSamplerSlot {
   FastSamplerSession* session = nullptr;
   moodycamel::ProducerToken optok{};
 
-  // TODO: should these change to relaxed atomics?
-  // we're willing to accept the thread trying to unsuccessfully dequeue
-  // until the values propagate between cores
-  // according to godbolt, both x86 gcc and clang are dumb
-  // and make unnecessary test or and instructions when working with the atomic
-  // The PowerPC instructions just look very funny in either case.
-  // https://godbolt.org/z/sEYTcGP5o
-  volatile bool hibernate_flag = true;
-  volatile bool decommissioned = false;
+  std::atomic<bool> hibernate_flag = true;
+  std::atomic<bool> decommissioned = false;
 
-  bool should_hibernate() const { return hibernate_flag; }
+  bool should_hibernate() const {
+    return hibernate_flag.load(std::memory_order_acquire);
+  }
 
-  bool should_decommission() const { return decommissioned; }
+  bool should_decommission() const {
+    return decommissioned.load(std::memory_order_acquire);
+  }
 
   void assign_session(FastSamplerSession& new_session);
 
   void hibernate_begin() {
-    // stores are not reordered with stores
-    // TODO: Specify memory order to make sure.
-    hibernate_flag = true;
+    hibernate_flag.store(true, std::memory_order_release);
     sem_wake();
   }
 
@@ -344,7 +339,7 @@ struct FastSamplerSlot {
   }
 
   void decommission() {
-    decommissioned = true;
+    decommissioned.store(true, std::memory_order_release);
     cv.notify_one();
     sem_wake();
   }
@@ -377,8 +372,6 @@ class FastSamplerSession {
   FastSamplerSession(size_t num_threads, unsigned int max_items_in_queue,
                      FastSamplerConfig config_)
       : config{std::move(config_)},
-        // TODO: Why doesn't this compile...
-        // threads{global_threadpool.get(num_threads)},
         items_in_queue{std::min(max_items_in_queue, items_in_queue.max())},
         inputs{config.idx.numel() / config.batch_size + 1},
         outputs{config.idx.numel() / config.batch_size + 1},
