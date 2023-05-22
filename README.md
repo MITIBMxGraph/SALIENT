@@ -5,6 +5,8 @@ SALIENT is a distributed multi-GPU training and inference system for graph neura
 
 ![Illustration of mini-batch progress per training epoch](docs/figs/system.png)
 
+> **UPDATE:** SALIENT has a successor [SALIENT++](https://github.com/MITIBMxGraph/SALIENT_plusplus), which distributes the node feature matrix across machines. SALIENT does not rely on graph partitioning tools if the main memory can store the entire matrix.
+ 
 ## Setup and Example Usage
 
 SALIENT can be run on a machine with one or multiple GPUs or on a GPU cluster.
