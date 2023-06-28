@@ -30,7 +30,7 @@ class SAGE(torch.nn.Module):
             self.convs.append(conv_layer(
                 hidden_channels, hidden_channels, **kwargs))
         self.convs.append(conv_layer(
-            hidden_channels, hidden_channels, **kwargs))
+            hidden_channels, out_channels, **kwargs))
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -359,7 +359,7 @@ class GCN(torch.nn.Module):
                 hidden_channels, hidden_channels, **kwargs))
             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
         self.convs.append(conv_layer(
-            hidden_channels, hidden_channels, **kwargs))
+            hidden_channels, out_channels, **kwargs))
         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
         self.reset_parameters()
 
